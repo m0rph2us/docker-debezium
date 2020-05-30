@@ -1,0 +1,37 @@
+server:
+  port: 8089
+
+db2:
+  data-source:
+    master:
+      driverClassName: com.mysql.cj.jdbc.Driver
+      jdbcUrl: jdbc:mysql://mysql-master-db2:3306/sample?useSSL=false&characterEncoding=utf8
+        &noAccessToProcedureBodies=true&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Seoul
+      username: root
+      password: 1234
+      maximumPoolSize: 10
+      maxLifetime: 55000
+      poolName: db2-master-pool
+
+spring:
+  kafka:
+    client-id: sample-client
+    bootstrap-servers:
+      - kafka-1:9092
+    properties:
+      schema.registry.url: http://schema-registry:8081
+      specific.avro.reader: false
+    consumer:
+      group-id: sample-consumer
+      auto-offset-reset: earliest
+      key-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+    producer:
+      key-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+    streams:
+      application-id: sample-stream
+      num-threads: 4
+      replication-factor: 1
+
+spring.jpa.properties.hibernate.dialect: org.hibernate.dialect.MySQLDialect

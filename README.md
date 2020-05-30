@@ -20,13 +20,18 @@ Data flows of this sample implementation.
 sh setup-network.sh
 cd db
 docker-compose up -d
+
 cd ..
+
 cd cluster
 docker-compose up -d
 sh init.sh
+
 cd ..
+
 cd sample-app
-./gradlew bootRun
+./gradlew bootJar
+docker-compose up --build
 ```
 
 And then insert, update, delete on the Db1. You should see every data changes applied to the Db2.

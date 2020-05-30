@@ -1,0 +1,18 @@
+version: '3'
+services:
+
+  sample-sink:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - ./build/libs:/data
+    networks:
+      - debezium-docker-net
+
+networks:
+  debezium-docker-net:
+    external:
+      name: debezium-docker-net
