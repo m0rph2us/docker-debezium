@@ -1,0 +1,17 @@
+{
+        "name": "mysql-connector-db1",
+        "config": {
+                "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+                "database.hostname": "mysql-master-db1",
+                "database.port": "3306",
+                "database.user": "cdc_user",
+                "database.password": "1234",
+                "database.server.id": "3141592",
+                "database.serverTimezone": "Asia/Seoul",
+                "database.server.name": "cdc_db1",
+                "database.history.kafka.bootstrap.servers": "kafka-1:9092",
+                "database.history.kafka.topic": "dbhistory.db1",
+                "include.schema.changes": "true",
+                "table.whitelist": "sample.tb_user"
+        }
+}

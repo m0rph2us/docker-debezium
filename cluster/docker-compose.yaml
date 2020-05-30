@@ -1,0 +1,110 @@
+version: '3'
+services:
+
+  zookeeper-1:
+    image: debezium/zookeeper:1.1.0.Final
+    ports:
+      - 21810:2181
+      - 28880:2888
+      - 38880:3888
+    environment:
+      - SERVER_ID=1
+      - SERVER_COUNT=1
+      - TZ=Asia/Seoul
+#    volumes:
+#      - ./volume/zookeeper-1/data:/zookeeper/data
+#      - ./volume/zookeeper-1/txns:/zookeeper/txns
+#      - ./volume/zookeeper-1/conf:/zookeeper/conf
+#      - ./volume/zookeeper-1/logs:/zookeeper/logs
+    networks:
+      - debezium-docker-net
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:5.4.0
+    ports:
+      - 8181:8181
+      - 8081:8081
+    depends_on:
+      - zookeeper-1
+    environment:
+      - SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper-1:2181/kafka
+      - SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR=1
+      - SCHEMA_REGISTRY_HOST_NAME=schema-registry
+      - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081
+      - SCHEMA_REGISTRY_AVRO_COMPATIBILITY_LEVEL=full
+      - TZ=Asia/Seoul
+    networks:
+      - debezium-docker-net
+
+  kafka-1:
+    image: debezium/kafka:1.1.0.Final
+    ports:
+      - 9092:9092
+      - 9012:9012
+    depends_on:
+      - zookeeper-1
+    environment:
+      - BROKER_ID=1
+      - ZOOKEEPER_CONNECT=zookeeper-1:2181/kafka
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=false
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=1
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_MIN_INSYNC_REPLICAS=1
+      # It's important to configure kafka cluster.
+      # See setup-network.sh or configure your host ip here.
+      # - ADVERTISED_HOST_NAME=10.200.10.1
+      # - ADVERTISED_PORT=9092
+      - JMXPORT=9012
+      - JMXHOST=10.200.10.1
+      - TZ=Asia/Seoul
+#    volumes:
+#      - ./volume/kafka-1/data:/kafka/data
+#      - ./volume/kafka-1/logs:/kafka/logs
+#      - ./volume/kafka-1/config:/kafka/config
+    networks:
+      - debezium-docker-net
+
+  kafka-manager:
+    image: kafkamanager/kafka-manager:3.0.0.4
+    ports:
+      - 9000:9000
+    environment:
+      - ZK_HOSTS=zookeeper-1:2181/kafka
+      - TZ=Asia/Seoul
+    networks:
+      - debezium-docker-net
+
+  debezium:
+    image: debezium/connect:1.1.0.Final
+    ports:
+      - 8083:8083
+    volumes:
+#      - ./volume/connect/logs:/kafka/logs
+    depends_on:
+      - kafka-1
+      - schema-registry
+    environment:
+      - BOOTSTRAP_SERVERS=kafka-1:9092
+      - GROUP_ID=debezium-001
+      - CONFIG_STORAGE_TOPIC=debezium_configs
+      - OFFSET_STORAGE_TOPIC=debezium_offsets
+      - STATUS_STORAGE_TOPIC=debezium_statuses
+      - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
+      - KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
+      - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
+      - INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      - TZ=Asia/Seoul
+    networks:
+      - debezium-docker-net
+
+networks:
+  debezium-docker-net:
+    external:
+      name: debezium-docker-net
